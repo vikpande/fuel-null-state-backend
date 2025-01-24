@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Collection {
+  id              Int              @id @default(autoincrement())
+  name            String           @db.VarChar(200)
+  description     String           @db.Text
+  createdBy       String           @db.VarChar(255)
+  createdDate     DateTime         @default(now())
+  updatedDate     DateTime         @updatedAt
+  collectionItems CollectionItem[]
+  ActivityLog     ActivityLog[]
+}
+
+model CollectionItem {
+  id                       Int                        @id @default(autoincrement())
+  collectionId             Int?
+  name                     String                     @db.VarChar(200)
+  description              String                     @db.Text
+  externalUrl              String?                    @db.VarChar(100)
+  image                    String?                    @db.Text
+  metadata_url             String?                    @db.Text
+  symbol                   String?                    @db.VarChar(10)
+  amount                   Decimal?                   @db.Decimal(65, 18)
+  status                   String?                    @db.VarChar(60)
+  initialOwner             String?                    @db.VarChar(100)
+  currentOwner             String?                    @db.VarChar(100)
+  tokenAddress             String?                    @db.VarChar(100)
+  mintAddress              String?                    @db.VarChar(100)
+  escrowAccount            String?                    @db.VarChar(100)
+  createdDate              DateTime                   @default(now())
+  updatedDate              DateTime                   @updatedAt
+  activityLog              ActivityLog[]
+  collection               Collection?                @relation(fields: [collectionId], references: [id])
+  collectionItemAttributes CollectionItemAttributes[]
+  collectionItemCreators   CollectionItemCreators[]
+  collectionItemOffers     CollectionItemOffers[]
+
+  @@index([collectionId])
+}
+
+model CollectionItemAttributes {
+  id               Int            @id @default(autoincrement())
+  collectionItemId Int
+  traitType        String         @db.VarChar(100)
+  traitValue       String         @db.VarChar(100)
+  collectionItem   CollectionItem @relation(fields: [collectionItemId], references: [id])
+
+  @@index([collectionItemId], map: "CollectionItemAttributes_collectionItemId_fkey")
+}
+
+model CollectionItemCreators {
+  id               Int            @id @default(autoincrement())
+  collectionItemId Int
+  address          String         @db.VarChar(100)
+  share            Int
+  collectionItem   CollectionItem @relation(fields: [collectionItemId], references: [id])
+
+  @@index([collectionItemId], map: "CollectionItemCreators_collectionItemId_fkey")
+}
+
+model CollectionItemOffers {
+  id                Int            @id @default(autoincrement())
+  collectionItemId  Int
+  offerCreatedBy    String         @db.VarChar(100)
+  offerTokenAccount String?        @db.VarChar(100)
+  amount            Decimal        @db.Decimal(65, 18)
+  isAccepted        Boolean        @default(false)
+  createdDate       DateTime       @default(now())
+  updatedDate       DateTime       @updatedAt
+  activityLog       ActivityLog[]
+  collectionItem    CollectionItem @relation(fields: [collectionItemId], references: [id])
+
+  @@index([collectionItemId], map: "CollectionItemOffers_collectionItemId_fkey")
+}
+
+model ActivityLog {
+  id                    Int                   @id @default(autoincrement())
+  actionType            String                @db.VarChar(60)
+  actionBy              String                @db.VarChar(100)
+  collectionId          Int?
+  collectionItemId      Int?
+  collectionItemOfferId Int?
+  actionDateTime        DateTime              @default(now())
+  collection            Collection?           @relation(fields: [collectionId], references: [id])
+  collectionItem        CollectionItem?       @relation(fields: [collectionItemId], references: [id])
+  collectionItemOffer   CollectionItemOffers? @relation(fields: [collectionItemOfferId], references: [id])
+
+  @@index([collectionId], map: "ActivityLog_collectionId_fkey")
+  @@index([collectionItemId], map: "ActivityLog_collectionItemId_fkey")
+  @@index([collectionItemOfferId], map: "ActivityLog_collectionItemOfferId_fkey")
+}
